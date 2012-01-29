@@ -1,6 +1,5 @@
 === No More Passwords ===
 Contributors: jackreichert
-Donate link: http://www.jackreichert.com/the-human-fund/
 Tags: Login, QR Code, Password
 Requires at least: 3.3
 Tested up to: 3.3.1
