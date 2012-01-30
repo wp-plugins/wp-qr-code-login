@@ -18,7 +18,7 @@ function wp_qr_code_login_head() {
 
 	global $wpdb;
 	$hash = md5(uniqid(rand(), true)); ?>
-	<meta name="qrHash" content="<?php echo $hash; ?>"?>
+	<meta name="qrHash" content="<?php echo $hash; ?>">
 
 <?php
 	$table_name = $wpdb->prefix . "qrLogin";
