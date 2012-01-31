@@ -56,3 +56,6 @@ I have no answer to foo bar dilemma.
 
 = 0.1 =
 * First attempt
+
+= 0.1.1 =
+* Fixed to work in subdirectory installs of wp. Special thanks to [hlcws](http://wordpress.org/support/profile/hlcws).

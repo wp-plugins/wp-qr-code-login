@@ -3,7 +3,7 @@
 Plugin Name: No More Passwords*
 Plugin URI: http://www.jackreichert.com/plugins/qr-login/
 Description: Lets WordPress users login to admin using a QR code
-Version: 0.1
+Version: 0.1.1
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2
@@ -16,9 +16,10 @@ function wp_qr_code_login_head() {
 	wp_enqueue_script( 'qrLogin_js', plugins_url('/qrLogin.js', __FILE__), array( 'jquery' ) );
 	wp_localize_script( 'qrLogin_js', 'qrLoginAjax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 
+	session_start();
 	global $wpdb;
 	$hash = md5(uniqid(rand(), true)); ?>
-	<meta name="qrHash" content="<?php echo $hash; ?>">
+	<meta name="qrHash" content="<?php echo $hash; ?>" wpurl="<?php bloginfo('url'); ?>">
 
 <?php
 	$table_name = $wpdb->prefix . "qrLogin";
