@@ -16,7 +16,6 @@ function wp_qr_code_login_head() {
 	wp_enqueue_script( 'qrLogin_js', plugins_url('/qrLogin.js', __FILE__), array( 'jquery' ) );
 	wp_localize_script( 'qrLogin_js', 'qrLoginAjax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 
-	session_start();
 	global $wpdb;
 	$hash = md5(uniqid(rand(), true)); ?>
 	<meta name="qrHash" content="<?php echo $hash; ?>" wpurl="<?php bloginfo('url'); ?>">
