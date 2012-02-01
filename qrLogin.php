@@ -3,7 +3,7 @@
 Plugin Name: No More Passwords*
 Plugin URI: http://www.jackreichert.com/plugins/qr-login/
 Description: Lets WordPress users login to admin using a QR code
-Version: 0.2
+Version: 0.3
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2
@@ -18,7 +18,7 @@ function wp_qr_code_login_head() {
 
 	global $wpdb;
 	$hash = md5(uniqid(rand(), true)); ?>
-	<meta name="qrHash" content="<?php echo $hash; ?>" wpurl="<?php bloginfo('url'); ?>">
+	<meta name="qrHash" content="<?php echo $hash; ?>">
 
 <?php
 	$table_name = $wpdb->prefix . "qrLogin";
@@ -33,7 +33,7 @@ function wp_qr_code_init_head (){
 	if (isset($_GET['qrHash']) && $_GET['qrHash'] != 'used'){
 		global $wpdb;
 		$hash = mysql_real_escape_string($_GET['qrHash']);
-		$qrUserLogin = $wpdb->get_results("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = '".$hash."'");
+		$qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = %s",$hash));
 		$user_login = $qrUserLogin[0]->uname;
 
 		if ($user_login != NULL && $user_login != 'guest'){
@@ -45,7 +45,7 @@ function wp_qr_code_init_head (){
 	        wp_set_auth_cookie($user_id);
 	        do_action('wp_login', $user_login);
 			
-			$mylink = $wpdb->get_results("UPDATE ".$wpdb->prefix."qrLogin SET hash = 'used' WHERE uname = '".$user_login."'");
+			$mylink = $wpdb->get_results($wpdb->prepare("UPDATE ".$wpdb->prefix."qrLogin SET hash = 'used' WHERE uname = %s",$user_login));
 			echo '<script type="text/javascript">window.location = "'.get_bloginfo("url").'/wp-admin/";</script>'; 
 		
 		} 
@@ -69,7 +69,7 @@ function ajax_check_logs_in() {
 		// get the submitted qrHash
 		$qrHash = mysql_real_escape_string($_POST['qrHash']);
 		global $wpdb;
-		$qrUserLogin = $wpdb->get_results("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = '".$qrHash."'");
+		$qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = %s",$qrHash));
 	 
 	    if($qrUserLogin[0]->uname != 'guest') {
 	    	header( "Content-Type: application/json" );
@@ -130,7 +130,7 @@ function qrLogin_plugin_options() {
 	
 	global $wpdb;
 	if (isset($_GET['qrHash'])){
-		$mylink = $wpdb->get_results("UPDATE ".$wpdb->prefix."qrLogin SET uname = '".$current_user->user_login."' WHERE hash = '".$hash."'");
+		$mylink = $wpdb->get_results($wpdb->prepare("UPDATE ".$wpdb->prefix."qrLogin SET uname = '".$current_user->user_login."' WHERE hash = %s",$hash));
 	}
 }
 add_action('admin_menu', 'qrLogin_plugin_menu');

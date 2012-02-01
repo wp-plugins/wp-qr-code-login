@@ -54,12 +54,15 @@ I have no answer to foo bar dilemma.
 
 == Changelog ==
 
-= 0.1 =
-* First attempt
-
-= 0.1.1 =
-* Fixed to work in subdirectory installs of wp. Special thanks to [hlcws](http://wordpress.org/support/profile/hlcws).
+= 0.3 =
+* $wpdb->prepare added to db queries. Special thanks to [scribu](http://wordpress.stackexchange.com/users/205/scribu)
 
 = 0.2 =
 * nonce added. 
 * get_userdatabylogin updated to get_user_by. Special thanks to [ericktedeschi](http://wordpress.org/support/profile/ericktedeschi)
+
+= 0.1.1 =
+* Fixed to work in subdirectory installs of wp. Special thanks to [hlcws](http://wordpress.org/support/profile/hlcws).
+
+= 0.1 =
+* First attempt
