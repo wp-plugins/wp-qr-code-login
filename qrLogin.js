@@ -9,9 +9,10 @@
 			var loginOffset = $('#loginform').offset();
 			$('#qrHash').attr('src',hashUrl).css({'display':'block','position':'absolute','right':(loginOffset.left-310),'top':loginOffset.top-55});					
 			var sendAjax = function() {
-				$.post(qrLoginAjax.ajaxurl, { 
+				$.post(qrLoginAjaxRequest.ajaxurl, { 
 					action : 'ajax-qrLogin',
-			        qrHash : qrHash
+			        qrHash : qrHash,
+			        QRnonce : qrLoginAjaxRequest.qrLoginNonce
 			    },function( response ) {
 			    	if (response.hash == qrHash){
 				        window.location = "http://"+window.location.hostname+"/wp-login.php?qrHash="+response.hash;

@@ -3,7 +3,7 @@
 Plugin Name: No More Passwords*
 Plugin URI: http://www.jackreichert.com/plugins/qr-login/
 Description: Lets WordPress users login to admin using a QR code
-Version: 0.1.1
+Version: 0.2
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2
@@ -14,7 +14,7 @@ License: GPL2
 function wp_qr_code_login_head() {
 	// Enqueue script that creates and places QR-code on login page
 	wp_enqueue_script( 'qrLogin_js', plugins_url('/qrLogin.js', __FILE__), array( 'jquery' ) );
-	wp_localize_script( 'qrLogin_js', 'qrLoginAjax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
+	wp_localize_script( 'qrLogin_js', 'qrLoginAjaxRequest', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ), 'qrLoginNonce' => wp_create_nonce( 'qrLogin-nonce' ) ) );
 
 	global $wpdb;
 	$hash = md5(uniqid(rand(), true)); ?>
@@ -38,7 +38,7 @@ function wp_qr_code_init_head (){
 
 		if ($user_login != NULL && $user_login != 'guest'){
 
-	        $user = get_userdatabylogin($user_login);
+	        $user = get_user_by('login',$user_login);
 	        $user_id = $user->ID;
 
 	        wp_set_current_user($user_id, $user_login);
@@ -58,7 +58,10 @@ add_action('init', 'wp_qr_code_init_head');
 // The viewer will not be logged in
 add_action( 'wp_ajax_nopriv_ajax-qrLogin', 'ajax_check_logs_in' );
 function ajax_check_logs_in() {
+	$nonce = $_POST['QRnonce'];
 
+	if ( ! wp_verify_nonce( $nonce, 'qrLogin-nonce' ) ) { die ( 'Busted!'); }
+	
 	// Gets current time
 	$time = time();
 	while((time() - $time) < 30) {
@@ -87,12 +90,12 @@ global $qrLogin_db_version;
 $qrLogin_db_version = "0.1";
 
 // Sets up db
-function jal_install() {
-   global $wpdb;
+function qrLoginDB_install() {
+
    global $qrLogin_db_version;
 
-   $table_name = $wpdb->prefix . "qrLogin";
-      
+   global $wpdb;
+   $table_name = $wpdb->prefix . "qrLogin";      
    $sql = "CREATE TABLE " . $table_name . " (
 	  id mediumint(9) NOT NULL AUTO_INCREMENT,
 	  timestamp datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
@@ -104,11 +107,11 @@ function jal_install() {
    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
    dbDelta($sql);
  
-   add_option("qrLogin_db_version", $qrLogin_db_version);
+   update_option("qrLogin_db_version", $qrLogin_db_version);
 }
 
 // Installs db on plugin activation
-register_activation_hook(__FILE__,'jal_install');
+register_activation_hook(__FILE__,'qrLoginDB_install');
 
 // Admin page. Saves user to db.
 function qrLogin_plugin_menu() {
