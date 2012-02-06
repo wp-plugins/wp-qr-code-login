@@ -21,6 +21,7 @@ function wp_qr_code_login_head() {
 	<meta name="qrHash" content="<?php echo $hash; ?>" wpurl="<?php bloginfo('url'); ?>">
 
 <?php
+	usleep(500);
 	$table_name = $wpdb->prefix . "qrLogin";
 	$rows_affected = $wpdb->insert( $table_name, array( 'timestamp' => current_time('mysql',1), 'uname' => 'guest', 'hash' => $hash, 'uip' => $_SERVER['REMOTE_ADDR']) );
 

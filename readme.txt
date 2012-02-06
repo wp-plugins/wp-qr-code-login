@@ -54,7 +54,10 @@ I have no answer to foo bar dilemma.
 
 == Changelog ==
 
-= 1.0 =
+= 0.5 = 
+* Delay added to prevent dDos attack
+
+= 0.4 =
 * CSRF fix. Special thanks to Julio from [Boiteaweb.fr](http://Boiteaweb.fr/) for his security analysis and recommendations
 * AJAX, Cron jobs optimized
 
