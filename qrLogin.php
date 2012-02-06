@@ -3,7 +3,7 @@
 Plugin Name: No More Passwords*
 Plugin URI: http://www.jackreichert.com/plugins/qr-login/
 Description: Lets WordPress users login to admin using a QR code
-Version: 0.4
+Version: 0.5
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2
