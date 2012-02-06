@@ -54,6 +54,10 @@ I have no answer to foo bar dilemma.
 
 == Changelog ==
 
+= 1.0 =
+* CSRF fix. Special thanks to Julio from [Boiteaweb.fr](http://Boiteaweb.fr/) for his security analysis and recommendations
+* AJAX, Cron jobs optimized
+
 = 0.3 =
 * $wpdb->prepare added to db queries. Special thanks to [scribu](http://wordpress.stackexchange.com/users/205/scribu)
 
