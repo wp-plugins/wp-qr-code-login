@@ -15,7 +15,7 @@ With this plugin you can make passwords a thing of the past*. All you need is yo
 
 *So you need to log in on your phone browser, but how often do you clear those browser cookies?
  
- You’re on the go and the most brilliant idea for your blog hits you. You KNOW that if you don’t post it NOW it won’t be BRILLIANT anymore.
+You’re on the go and the most brilliant idea for your blog hits you. You KNOW that if you don’t post it NOW it won’t be BRILLIANT anymore.
 The problem is that you’re out visiting your Aunt Sally and
 Your password is so secure even YOU can’t remember it off the top of your head
 Aunt Sally has so many junk apps that there are most probably keyloggers installed, and there goes your secure password.
@@ -53,6 +53,9 @@ I have no answer to foo bar dilemma.
 1. This is how your login page will look all pimped out with it's QR code.
 
 == Changelog ==
+
+= 0.6 = 
+* XSS fix. Special thanks to Julio from [Boiteaweb.fr](http://Boiteaweb.fr/) for his security analysis and recommendations
 
 = 0.5 = 
 * Delay added to prevent dDos attack

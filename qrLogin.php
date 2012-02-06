@@ -168,8 +168,9 @@ function qrLogin_plugin_options() {
 		<h1>The requester will not be logged in.</h1>
 		<?php	
 		} else {
+			$qrHash = mysql_real_escape_string($_POST['qrHash']);
 			global $wpdb;
-			$qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = %s",$_GET['qrHash']));
+			$qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = %s", $qrHash));
 			?>
 			<h1>A login request has been made from<br>
 			<?php echo $qrUserLogin[0]->uIP; ?><br>
