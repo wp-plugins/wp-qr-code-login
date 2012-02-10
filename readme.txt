@@ -52,6 +52,10 @@ I have no answer to foo bar dilemma.
 1. This is how your login page will look all pimped out with it's QR code.
 
 == Changelog ==
+
+= 1.1 =
+* All POST/GET variables have been properly sanitized against XSS attacks. Special thanks to Julio from [Boiteaweb.fr](http://Boiteaweb.fr/) for his security analysis and recommendations
+
 = 1.0 =
 * Out of Beta.
 * IP confirmation fixed.

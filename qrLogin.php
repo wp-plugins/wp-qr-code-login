@@ -3,7 +3,7 @@
 Plugin Name: No More Passwords*
 Plugin URI: http://www.jackreichert.com/plugins/qr-login/
 Description: Lets WordPress users login to the Dashboard using a QR code
-Version: 1.0
+Version: 1.1
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2
@@ -33,7 +33,7 @@ add_action('login_head', 'wp_qr_code_login_head');
 function wp_qr_code_init_head (){
 	if (isset($_GET['qrHash']) && $_GET['qrHash'] != 'used'){
 		global $wpdb;
-		$hash = mysql_real_escape_string($_GET['qrHash']);
+		$hash = mysql_real_escape_string(htmlentities($_GET['qrHash']));
 		$qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = %s",$hash));
 		$user_login = $qrUserLogin[0]->uname;
 		
@@ -61,7 +61,7 @@ add_action('init', 'wp_qr_code_init_head');
 // The viewer will not be logged in
 add_action( 'wp_ajax_nopriv_ajax-qrLogin', 'ajax_check_logs_in' );
 function ajax_check_logs_in() {
-	$nonce = $_POST['QRnonce'];
+	$nonce = mysql_real_escape_string(htmlentities($_POST['QRnonce']));
 
 	if ( ! wp_verify_nonce( $nonce, 'qrLogin-nonce' ) ) { die ( 'Busted!'); }
 	
@@ -70,7 +70,7 @@ function ajax_check_logs_in() {
 	while((time() - $time) < 30) {
 		
 		// get the submitted qrHash
-		$qrHash = mysql_real_escape_string($_POST['qrHash']);
+		$qrHash = mysql_real_escape_string(htmlentities($_POST['qrHash']));
 		global $wpdb;
 		$qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = %s",$qrHash));
 	 
@@ -149,12 +149,12 @@ function qrLogin_plugin_options() {
 	</style>
 <?php
 	if (isset($_GET['QRnonceAdmin']) && isset($_GET['qrHash'])){
-		if ( ! wp_verify_nonce( $_GET['QRnonceAdmin'], 'QRnonceAdmin' ) ) { 
+		if ( ! wp_verify_nonce( mysql_real_escape_string(htmlentities($_GET['QRnonceAdmin'])), 'QRnonceAdmin' ) ) { 
 			die ( 'Busted!'); 
 		}
 		
 		$current_user = wp_get_current_user();
-		$hash = mysql_real_escape_string($_GET['qrHash']); ?>
+		$hash = mysql_real_escape_string(htmlentities($_GET['qrHash'])); ?>
 		<h1>Howdy, <?php echo $current_user->display_name; ?>.<br>
 			You have successfully logged in.</h1> 
 <?php		
@@ -168,7 +168,7 @@ function qrLogin_plugin_options() {
 		<h1>The requester will not be logged in.</h1>
 		<?php	
 		} else {
-			$qrHash = mysql_real_escape_string($_GET['qrHash']);
+			$qrHash = mysql_real_escape_string(htmlentities($_GET['qrHash']));
 			global $wpdb;
 			$qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = %s", $qrHash));
 			?>
@@ -177,14 +177,14 @@ function qrLogin_plugin_options() {
 			are you sure that you want to log in?</h1>
 			<form action="" method="get">
 				<input type="hidden" name="page" value="qr-login">
-				<input type="hidden" name="qrHash" value="<?php echo $_GET['qrHash']; ?>">
+				<input type="hidden" name="qrHash" value="<?php echo mysql_real_escape_string(htmlentities($_GET['qrHash'])); ?>">
 				<input type="hidden" name="QRnonceAdmin" value="<?php echo wp_create_nonce('QRnonceAdmin'); ?>">
 				<input type="submit" value="YES">
 			</form>
 			
 			<form action="" method="get">
 				<input type="hidden" name="page" value="qr-login">
-				<input type="hidden" name="qrHash" value="<?php echo $_GET['qrHash']; ?>">
+				<input type="hidden" name="qrHash" value="<?php echo mysql_real_escape_string(htmlentities($_GET['qrHash'])); ?>">
 				<input type="hidden" name="reject" value="busted">
 				<input type="submit" value="NO">
 			</form>
