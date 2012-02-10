@@ -3,7 +3,7 @@
 Plugin Name: No More Passwords*
 Plugin URI: http://www.jackreichert.com/plugins/qr-login/
 Description: Lets WordPress users login to the Dashboard using a QR code
-Version: 0.5
+Version: 1.0
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2
@@ -168,7 +168,7 @@ function qrLogin_plugin_options() {
 		<h1>The requester will not be logged in.</h1>
 		<?php	
 		} else {
-			$qrHash = mysql_real_escape_string($_POST['qrHash']);
+			$qrHash = mysql_real_escape_string($_GET['qrHash']);
 			global $wpdb;
 			$qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = %s", $qrHash));
 			?>

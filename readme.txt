@@ -9,8 +9,6 @@ Log into your WordPress site using a smartphone... No typing and no passwords! (
 
 == Description ==
 
-Disclaimer: This plugin is currently in Beta. Please play with it, but don’t rely on it… yet. Feedback is most welcome!
-
 With this plugin you can make passwords a thing of the past*. All you need is your trusty smartphone with a QR Code reading app.
 
 *So you need to log in on your phone browser, but how often do you clear those browser cookies?
@@ -21,6 +19,7 @@ Your password is so secure even YOU can’t remember it off the top of your head
 Aunt Sally has so many junk apps that there are most probably keyloggers installed, and there goes your secure password.
 That’s where No More Passwords comes in handy. Log into your blog, keyboard — and remembering — free!
 
+Disclaimer: This plugin is fairly secure and has been audited by several security experts, but the user should know that they are using it at their own discretion.
 
 == Installation ==
 
@@ -53,6 +52,9 @@ I have no answer to foo bar dilemma.
 1. This is how your login page will look all pimped out with it's QR code.
 
 == Changelog ==
+= 1.0 =
+* Out of Beta.
+* IP confirmation fixed.
 
 = 0.6 = 
 * XSS fix. Special thanks to Julio from [Boiteaweb.fr](http://Boiteaweb.fr/) for his security analysis and recommendations
