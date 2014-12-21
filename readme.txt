@@ -9,6 +9,8 @@ Log into your WordPress site using a smartphone... No typing and no passwords! (
 
 == Description ==
 
+[youtube https://www.youtube.com/watch?v=gWDtQAXIu0I]
+
 With this plugin you can make passwords a thing of the past*. All you need is your trusty smartphone with a QR Code reading app.
 
 *So you need to log in on your phone browser, but how often do you clear those browser cookies?
