@@ -1,9 +1,9 @@
 <?php 
 /*
 Plugin Name: No More Passwords*
-Plugin URI: http://www.jackreichert.com/plugins/qr-login/
+Plugin URI: http://www.jackreichert.com/plugins/no-more-passwords/
 Description: Lets WordPress users login to the Dashboard using a QR code
-Version: 1.1
+Version: 1.2
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2
@@ -11,6 +11,7 @@ License: GPL2
 */
 
 // Creates Hash places as meta tag in header (for js to find) inserts into db.
+add_action('login_head', 'wp_qr_code_login_head');
 function wp_qr_code_login_head() {
 	// Enqueue script that creates and places QR-code on login page
 	wp_enqueue_script( 'qrLogin_js', plugins_url('/qrLogin.js', __FILE__), array( 'jquery' ) );
@@ -26,14 +27,14 @@ function wp_qr_code_login_head() {
 	$rows_affected = $wpdb->insert( $table_name, array( 'timestamp' => current_time('mysql',1), 'uname' => 'guest', 'hash' => $hash, 'uip' => $_SERVER['REMOTE_ADDR']) );
 
 }
-// adds init to login header
-add_action('login_head', 'wp_qr_code_login_head');
 
-// before headers are sent checks to see if hash has been received. Logs in if all checks out.
-function wp_qr_code_init_head (){
-	if (isset($_GET['qrHash']) && $_GET['qrHash'] != 'used'){
+
+// checks to see if hash has been received. Logs in if all checks out.
+add_action('login_head', 'wp_qr_code_login_check_user');
+function wp_qr_code_login_check_user (){
+	if (isset($_GET['qrHash']) && $_GET['qrHash'] != 'used') {
 		global $wpdb;
-		$hash = mysql_real_escape_string(htmlentities($_GET['qrHash']));
+		$hash = preg_replace("/[^0-9a-zA-Z ]/", "",  $_GET['qrHash']);
 		$qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = %s",$hash));
 		$user_login = $qrUserLogin[0]->uname;
 		
@@ -54,84 +55,48 @@ function wp_qr_code_init_head (){
 		} 
 	}
 }
-// adds before headers are sent
-add_action('init', 'wp_qr_code_init_head');
 
 
 // The viewer will not be logged in
 add_action( 'wp_ajax_nopriv_ajax-qrLogin', 'ajax_check_logs_in' );
 function ajax_check_logs_in() {
-	$nonce = mysql_real_escape_string(htmlentities($_POST['QRnonce']));
+	$nonce = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['QRnonce']);
 
-	if ( ! wp_verify_nonce( $nonce, 'qrLogin-nonce' ) ) { die ( 'Busted!'); }
+	if ( ! wp_verify_nonce( $nonce, 'qrLogin-nonce' ) ) { 
+        die ( 'Busted!'); 
+    }
 	
 	// Gets current time
 	$time = time();
 	while((time() - $time) < 30) {
 		
 		// get the submitted qrHash
-		$qrHash = mysql_real_escape_string(htmlentities($_POST['qrHash']));
+		$qrHash = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['qrHash']);
 		global $wpdb;
 		$qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = %s",$qrHash));
-	 
-	    if($qrUserLogin[0]->uname != 'guest') {
+
+	    if(isset($qrUserLogin[0]) && $qrUserLogin[0]->uname != 'guest') {
+            header('Access-Control-Allow-Origin: *'); 
 	    	header( "Content-Type: application/json" );
-			echo json_encode($qrUserLogin[0]);
+			echo json_encode($qrUserLogin[0]->hash);
 	        break;
-	    }
+	    } elseif(is_null($qrUserLogin[0])) {
+            header('Access-Control-Allow-Origin: *'); 
+            header( "Content-Type: application/json" );
+			echo json_encode("hash gone");
+	        break;
+        }
 	 
 	    usleep(500);
 	}	
  
     // IMPORTANT: don't forget to "exit"
-    exit;
+    exit();
 }
 
-
-// Sets up db
-function qrLoginDB_install() {
-	global $qrLogin_db_version;
-	$qrLogin_db_version = "0.1";
-   global $wpdb;
-   $table_name = $wpdb->prefix . "qrLogin";      
-   $sql = "CREATE TABLE " . $table_name . " (
-		id mediumint(9) NOT NULL AUTO_INCREMENT,
-		timestamp datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
-		hash text NOT NULL,
-		uname tinytext NOT NULL,
-		UNIQUE KEY id (id)
-	);";
-
-   require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-   dbDelta($sql);
-   update_option("qrLogin_db_version", $qrLogin_db_version);
-
-}
-
-function qrLoginDB_update02(){
-	global $wpdb;
-	$table_name = $wpdb->prefix . "qrLogin";      
-	$sql = "ALTER TABLE " . $table_name . " 
-		ADD uIP VARCHAR(55) DEFAULT '' NOT NULL";
-	
-	$update = $wpdb->get_results($sql);
-
-}
-
-function qrLogin_update_db_check() { 
-	global $qrLogin_db_version;
-	$qrLogin_db_version = "0.2";
-    if (get_site_option('qrLogin_db_version') != $qrLogin_db_version) {
-        qrLoginDB_update02();
-    }
-    update_option("qrLogin_db_version", $qrLogin_db_version);
-}
-add_action('plugins_loaded', 'qrLogin_update_db_check');
-
-// Installs db on plugin activation
-register_activation_hook(__FILE__,'qrLoginDB_install');
 
 // Admin page. Saves user to db.
+add_action('admin_menu', 'qrLogin_plugin_menu');
 function qrLogin_plugin_menu() {
 	add_options_page('No More Passwords Plugin Options', 'No More Passwords', 'manage_options', 'qr-login', 'qrLogin_plugin_options');
 }
@@ -149,12 +114,12 @@ function qrLogin_plugin_options() {
 	</style>
 <?php
 	if (isset($_GET['QRnonceAdmin']) && isset($_GET['qrHash'])){
-		if ( ! wp_verify_nonce( mysql_real_escape_string(htmlentities($_GET['QRnonceAdmin'])), 'QRnonceAdmin' ) ) { 
+		if ( ! wp_verify_nonce( preg_replace("/[^0-9a-zA-Z ]/", "", $_GET['QRnonceAdmin']), 'QRnonceAdmin' ) ) { 
 			die ( 'Busted!'); 
 		}
 		
 		$current_user = wp_get_current_user();
-		$hash = mysql_real_escape_string(htmlentities($_GET['qrHash'])); ?>
+		$hash = preg_replace("/[^0-9a-zA-Z ]/", "", $_GET['qrHash']); ?>
 		<h1>Howdy, <?php echo $current_user->display_name; ?>.<br>
 			You have successfully logged in.</h1> 
 <?php		
@@ -168,7 +133,7 @@ function qrLogin_plugin_options() {
 		<h1>The requester will not be logged in.</h1>
 		<?php	
 		} else {
-			$qrHash = mysql_real_escape_string(htmlentities($_GET['qrHash']));
+			$qrHash = preg_replace("/[^0-9a-zA-Z ]/", "", $_GET['qrHash']);
 			global $wpdb;
 			$qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = %s", $qrHash));
 			?>
@@ -177,14 +142,14 @@ function qrLogin_plugin_options() {
 			are you sure that you want to log in?</h1>
 			<form action="" method="get">
 				<input type="hidden" name="page" value="qr-login">
-				<input type="hidden" name="qrHash" value="<?php echo mysql_real_escape_string(htmlentities($_GET['qrHash'])); ?>">
+				<input type="hidden" name="qrHash" value="<?php echo $qrHash; ?>">
 				<input type="hidden" name="QRnonceAdmin" value="<?php echo wp_create_nonce('QRnonceAdmin'); ?>">
 				<input type="submit" value="YES">
 			</form>
 			
 			<form action="" method="get">
 				<input type="hidden" name="page" value="qr-login">
-				<input type="hidden" name="qrHash" value="<?php echo mysql_real_escape_string(htmlentities($_GET['qrHash'])); ?>">
+				<input type="hidden" name="qrHash" value="<?php echo $qrHash; ?>">
 				<input type="hidden" name="reject" value="busted">
 				<input type="submit" value="NO">
 			</form>
@@ -204,36 +169,58 @@ function qrLogin_plugin_options() {
 }
 
 
+// define cron schedlue for cleaning old qrcode hashses
+add_filter('cron_schedules', 'newSchedules');
 function newSchedules($schedules){ // Creates new 
-	$schedules['threeMin'] = array('interval'=> 180, 'display'=>  __('Once Every 3 Minutes'));
-	$schedules['fiveMin'] = array('interval'=> 300, 'display'=>  __('Once Every 5 Minutes'));
-	$schedules['tenMin'] = array('interval'=> 600, 'display'=>  __('Once Every 10 Minutes'));  
-	$schedules['fifteenMin'] = array('interval'=> 900, 'display'=>  __('Once Every 15 Minutes'));    
-	$schedules['thirtyMin'] = array('interval'=> 1800, 'display'=>  __('Once Every 30 Minutes'));      
+	$schedules['threeMin'] = array('interval'=> 180, 'display'=>  __('Once Every 3 Minutes'));    
   
 return $schedules;
 }
 
-add_filter('cron_schedules', 'newSchedules');
-
-
-add_action('admin_menu', 'qrLogin_plugin_menu');
-
-// Cleans db from extra entries hourly
-function qr_cron_activate() {
-	wp_schedule_event(time(), 'fifteenMin', 'qr_fifteen_clean');
-}
+// Cleans db from extra entries every three minutes
+add_action('qr_three_clean', 'qr_housecleaning');
 function qr_housecleaning(){
 	global $wpdb;
-	$mylink = $wpdb->get_results("DELETE FROM ".$wpdb->prefix."qrLogin WHERE uname = 'guest' AND TIMESTAMPDIFF(MINUTE, timestamp, UTC_TIMESTAMP()) > 15");
+	$mylink = $wpdb->get_results("DELETE FROM ".$wpdb->prefix."qrLogin WHERE uname = 'guest' AND TIMESTAMPDIFF(MINUTE, timestamp, UTC_TIMESTAMP()) > 5");
 }
-register_activation_hook(__FILE__, 'qr_cron_activate');
-add_action('qr_fifteen_clean', 'qr_housecleaning');
 
-// Clears cron on deactivation
+
+// Sets up db
+function qrLoginDB_install() {
+	$qrLogin_db_version = "0.2";
+    global $wpdb;
+    $table_name = $wpdb->prefix . "qrLogin";      
+    $sql = "CREATE TABLE " . $table_name . " (
+      id mediumint(9) NOT NULL AUTO_INCREMENT,
+      timestamp datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+      hash text NOT NULL,
+      uname tinytext NOT NULL,
+      uIP VARCHAR(55) DEFAULT '' NOT NULL,
+      UNIQUE KEY id (id)
+    );";
+
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
+    
+    update_option("qrLogin_db_version", $qrLogin_db_version);
+
+}
+
+function qr_cron_activate() {
+	wp_schedule_event(time(), 'threeMin', 'qr_three_clean');
+}
+
+// adds cron and db on activation
+register_activation_hook(__FILE__, 'qr_activate');
+function qr_activate() {
+    qr_cron_activate();
+    qrLoginDB_install();
+}
+
+// Clears cron and extra hashes on deactivation, keeps user login log
+register_deactivation_hook(__FILE__, 'qr_cron_deactivate');
 function qr_cron_deactivate() {
-	wp_clear_scheduled_hook('qr_fifteen_clean');
+	wp_clear_scheduled_hook('qr_three_clean');
 	global $wpdb;
 	$mylink = $wpdb->get_results("DELETE FROM ".$wpdb->prefix."qrLogin WHERE uname = 'guest'");
 }
-register_deactivation_hook(__FILE__, 'qr_cron_deactivate');

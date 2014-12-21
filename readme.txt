@@ -2,7 +2,7 @@
 Contributors: jackreichert
 Tags: Login, QR Code, Password
 Requires at least: 3.3
-Tested up to: 3.3.1
+Tested up to: 4.1
 Stable tag: trunk
 
 Log into your WordPress site using a smartphone... No typing and no passwords! (almost)
@@ -52,6 +52,8 @@ I have no answer to foo bar dilemma.
 1. This is how your login page will look all pimped out with it's QR code.
 
 == Changelog ==
+= 1.2 =
+* Updated code to work with WordPress 4.1
 
 = 1.1 =
 * All POST/GET variables have been properly sanitized against XSS attacks. Special thanks to Julio from [Boiteaweb.fr](http://Boiteaweb.fr/) for his security analysis and recommendations
