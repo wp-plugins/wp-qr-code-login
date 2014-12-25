@@ -3,7 +3,7 @@
 Plugin Name: No More Passwords*
 Plugin URI: http://www.jackreichert.com/plugins/no-more-passwords/
 Description: Lets WordPress users login to the Dashboard using a QR code
-Version: 1.2
+Version: 1.2.1
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2

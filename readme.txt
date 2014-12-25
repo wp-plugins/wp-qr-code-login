@@ -54,6 +54,9 @@ I have no answer to foo bar dilemma.
 1. This is how your login page will look all pimped out with it's QR code.
 
 == Changelog ==
+= 1.2.1 =
+* Fixed querystring bug
+
 = 1.2 =
 * Updated code to work with WordPress 4.1
 

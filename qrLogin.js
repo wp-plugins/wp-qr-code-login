@@ -15,7 +15,8 @@
 			        QRnonce : qrLoginAjaxRequest.qrLoginNonce
 			    },function( response ){
 			    	if (response === qrHash){
-				        window.location = window.location.href+"?qrHash="+response;
+                        var hasQuery = window.location.href.indexOf("?") > -1;
+				        window.location = window.location.href+((hasQuery) ? "&" : "?"  )+"qrHash="+response;
 				    } else if(response === 'hash gone') {
                         $('#qrHash').html('<h2>Oh no! You waited too long!</h2><br><p>Please reload the page and try No More Passwords again.</p><p>If you see this message and less than 5 mintues have passed since you got here please <a href="http://nopasswords.website/contact/" target="_BLANK">let us know!</a></p>');
                     } else {
