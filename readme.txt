@@ -1,6 +1,6 @@
 === No Passwords ===
 Contributors: jackreichert
-Tags: Login, QR Code, Password, security
+Tags: Login, QR Code, Password, security, no more passwords
 Requires at least: 3.3
 Tested up to: 4.1
 Stable tag: trunk
