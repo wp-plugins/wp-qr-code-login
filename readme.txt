@@ -15,7 +15,7 @@ With this plugin you can make passwords a thing of the past. All you need is you
 
 (Coming soon, iOS companion app that will negate your need for a separate QR Code reading app!)
 
-Disclaimer: A website is only as secure as the leaste secure component on it. This plugin aims to be more secure than using the default login page.
+Disclaimer: A website is only as secure as the least secure component on it. This plugin aims to be more secure than using the default login page.
 
 == Installation ==
 
