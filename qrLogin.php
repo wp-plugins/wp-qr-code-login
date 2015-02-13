@@ -3,7 +3,7 @@
 Plugin Name: No Passwords
 Plugin URI: http://nopasswords.website/
 Description: Lets WordPress users login to their site using a QR code
-Version: 1.3
+Version: 1.3.1
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2
@@ -209,7 +209,7 @@ class NoPasswords {
                     if ( $qrUserLogin == "guest" ) {
                         // get secret  
                         $secret = get_user_meta($userOfPK[0]->ID, 'secret', true);                
-                        $pin = TimeOTP::calcOTP( $secret );
+                        $pin = TimeOTP::calcOTP( $secret, 8, 60 );
 
                         if ( $pin === $otp ) {
                             // Compare check decrypted challenge

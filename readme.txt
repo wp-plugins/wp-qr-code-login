@@ -48,6 +48,9 @@ I have no answer to foo bar dilemma.
 1. This is how your login page will look all pimped out with it's QR code.
 
 == Changelog ==
+= 1.3.1 =
+* TOTP lengthened to 8 length and 60 seconds.
+
 = 1.3 =
 * Updated to be used with soon to arrive companion app. 
 * QR code generation happens on your server, not via a google api.
