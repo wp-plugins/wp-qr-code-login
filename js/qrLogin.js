@@ -7,7 +7,7 @@
             // set width for qrcode
             var qrWidth = 201;
             // generate the qr code
-            var hashUrl = '/NoPasswords.website/?qrHash=' + qrLoginAjaxRequest.qrHash
+            var hashUrl = '/unlock.digital/?qrHash=' + qrLoginAjaxRequest.qrHash
             // append the qr code to the login form
 			$('#loginform').append('<div id="qrHash" style="display:block;width:' + qrWidth + 'px;height:auto;margin: 0 auto;"><img></div>').css({'padding-bottom':0});
 			$('#qrHash img').attr('src', hashUrl);

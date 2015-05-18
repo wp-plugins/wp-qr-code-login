@@ -1,9 +1,9 @@
 <?php 
 /*
-Plugin Name: No Passwords
-Plugin URI: http://nopasswords.website/
-Description: Lets WordPress users login to their site using a QR code
-Version: 1.3.1
+Plugin Name: Unlock Digital (No Passwords)
+Plugin URI: http://unlock.digital/
+Description: Formally, No More Passwords, this plugin with companion app lets WordPress users login to their site using a QR code
+Version: 1.3.2
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2
@@ -21,8 +21,12 @@ class NoPasswords {
      *
      */
     public function __construct() {
-        $this->version = "1.3";
+        $this->version = get_option("qrLogin_db_version", "1.3.1");
         $this->tbl_name = "qrLogin";
+        if ( "1.3.2" != $this->version ) {
+            $this->qrLoginDB_install();
+        }
+        
         $this->load_dependencies();
         $this->load_actions();
     }
@@ -32,8 +36,8 @@ class NoPasswords {
      *
      */
     private function load_dependencies() {
-        require_once(dirname(__FILE__).'/libs/TimeOTP.php');
-        require_once(dirname(__FILE__).'/libs/phpqrcode.php');
+        require_once(dirname(__FILE__).'/libs/TimeOTP.inc');
+        require_once(dirname(__FILE__).'/libs/phpqrcode.inc');
     }
     
     /**
@@ -41,7 +45,7 @@ class NoPasswords {
      *
      */
     public function load_actions() {
-        add_action('login_head', array( $this,'wp_qr_code_login_head'));
+        add_action('login_enqueue_scripts', array( $this,'wp_qr_code_login_head'));
         add_action('login_head', array( $this,'wp_qr_code_login_check_user'));
         add_action( 'wp_ajax_nopriv_ajax-qrLogin', array( $this,'ajax_check_logs_in') );
         add_action('parse_request', array( $this, 'qrLoginOTP'));
@@ -79,8 +83,8 @@ class NoPasswords {
         
         // insert hash into db
         global $wpdb;
-        $table_name = $wpdb->prefix . $this->tbl_name;
-        $rows_affected = $wpdb->insert( $table_name, array( 'timestamp' => current_time('mysql',1), 'uname' => 'guest', 'hash' => $hash, 'uip' => $_SERVER['REMOTE_ADDR']) );
+        $table_name = $wpdb->base_prefix . $this->tbl_name;
+        $rows_affected = $wpdb->insert( $table_name, array( 'timestamp' => current_time('mysql',1), 'uname' => 'unused row', 'hash' => $hash, 'uip' => $_SERVER['REMOTE_ADDR']) );
 
         return $hash;
     }
@@ -97,12 +101,11 @@ class NoPasswords {
                 $hash = preg_replace("/[^0-9a-zA-Z ]/", "",  $_GET['qrHash']);
                 $user_login = $this->get_user_by_qrHash( $hash );
 
-                if ($user_login != NULL && $user_login != 'guest' && $user_login != ''){
-
+                if ($user_login != NULL && $user_login != 'unused row' && $user_login != ''){
                     $this->log_user_in_with_login( $user_login );
 
                     global $wpdb;
-                    $table_name = $wpdb->prefix . $this->tbl_name;
+                    $table_name = $wpdb->base_prefix . $this->tbl_name;
                     $rows_affected = $wpdb->update( $table_name, array('hash' => 'used'), array('uname' => $user_login, 'hash' => $hash) );
 
                     $redirect_to = get_bloginfo("url").'/wp-admin/';
@@ -122,9 +125,12 @@ class NoPasswords {
      */
     private function get_user_by_qrHash( $hash ) {
         global $wpdb;
-        $table_name = $wpdb->prefix . $this->tbl_name;
-        $qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE hash = %s", $hash));
+        $table_name = $wpdb->base_prefix . $this->tbl_name;
+        $qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT uname FROM $table_name WHERE hash = %s", $hash));
         if ( is_array( $qrUserLogin ) && isset( $qrUserLogin[0]->uname ) ) {
+            if ( count( $qrUserLogin ) > 1 ) {
+                return false;
+            }
             return $qrUserLogin[0]->uname;
         }
         
@@ -139,7 +145,7 @@ class NoPasswords {
         $user = get_user_by('login', $user_login);
         $user_id = $user->ID;
 
-        wp_set_current_user($user_id);
+        wp_set_current_user($user_id, $user_login);
         wp_set_auth_cookie($user_id);
         do_action('wp_login', $user_login);
     }
@@ -153,7 +159,7 @@ class NoPasswords {
         $nonce = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['QRnonce']);
 
         if ( ! wp_verify_nonce( $nonce, 'qrLogin-nonce' ) ) { 
-            die ( 'Busted!'); 
+            die ( 'hash gone'); 
         }
 
         // Gets current time
@@ -164,19 +170,21 @@ class NoPasswords {
             $qrHash = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['qrHash']);
             $qrUserLogin = $this->get_user_by_qrHash( $qrHash );
 
-            if( $qrUserLogin && $qrUserLogin != 'guest') {
+            if( $qrUserLogin && $qrUserLogin != 'unused row') {
                 header('Access-Control-Allow-Origin: *'); 
                 header( "Content-Type: application/json" );
                 echo json_encode($qrHash);
+                exit();
                 break;
             } elseif(is_null($qrUserLogin[0])) {
                 header('Access-Control-Allow-Origin: *'); 
                 header( "Content-Type: application/json" );
                 echo json_encode("hash gone");
+                exit();
                 break;
             }
-
-            usleep(500);
+            
+            usleep(1500000);
         }	
 
         exit();
@@ -186,14 +194,14 @@ class NoPasswords {
      * used by app, if alt username/password + otp check out, log user in
      *
      */
-    public function qrLoginOTP($query) {
-        if ($query->request == "NoPasswords.website") {
+    public function qrLoginOTP( $query ) {
+        if ($query->request == "unlock.digital") {
             if (isset($_POST['qrHash']) && isset($_POST['uuid']) && isset($_POST['otp']) && isset($_POST['mfth']) ) {
                 $qrHash = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['qrHash']);
                 $uuid = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['uuid']);
                 $otp = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['otp']);
                 $mfth = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['mfth']);
-
+                
                 // get user of pk
                 $userOfPK = get_users( array(
                     'meta_key' => "uuid",
@@ -206,10 +214,15 @@ class NoPasswords {
                     // check qrHash
                     $qrUserLogin = $this->get_user_by_qrHash( $qrHash );
                     // if hasen't been used
-                    if ( $qrUserLogin == "guest" ) {
+                    if ( $qrUserLogin == "unused row" ) {
                         // get secret  
-                        $secret = get_user_meta($userOfPK[0]->ID, 'secret', true);                
-                        $pin = TimeOTP::calcOTP( $secret, 8, 60 );
+                        $secret = get_user_meta($userOfPK[0]->ID, 'secret', true);
+                        
+                        // decrypt secret
+                        $decrypted = rtrim(mcrypt_decrypt(MCRYPT_RIJNDAEL_256, md5($mfth), base64_decode($secret), MCRYPT_MODE_CBC, md5(md5($mfth))), "\0");
+                        
+                        // generate totp
+                        $pin = TimeOTP::calcOTP( $decrypted, 8, 60 );
 
                         if ( $pin === $otp ) {
                             // Compare check decrypted challenge
@@ -218,26 +231,22 @@ class NoPasswords {
                             if ( wp_check_password( $mfth, $hashed ) ) {
                                 // tell db that user can log in                                
                                 global $wpdb;
-                                $table_name = $wpdb->prefix . $this->tbl_name;
+                                $table_name = $wpdb->base_prefix . $this->tbl_name;
                                 $rows_affected = $wpdb->update( $table_name, array('uname' => $userOfPK[0]->user_login), array('hash' => $qrHash) );
                                 die("Your Jedi mindtricks seem to have power here.");
-                            } else {
-                                // error_log("Password DON'T match... Password: $mfth"); 
-                            }
-                        } else {
-                            // error_log("OTPs DON'T match... Pin: $pin / OTP: $otp"); 
-                        }
-                    }   
-                }            
+                            } 
+                        } 
+                    } 
+                } 
             } elseif ( isset($_GET['qrHash']) ) {
                 header('Access-Control-Allow-Origin: *'); 
                 header( "Content-Type: application/json" );
                 $qrHash = preg_replace("/[^0-9a-zA-Z ]/", "", $_GET['qrHash']);
-                QRcode::png(get_bloginfo('url') . '/wp-admin/options-general.php?page=qr-login&qrHash=' . $qrHash, false, 'h', 3, 5, false);
+                QRcode::png( get_admin_url().'options-general.php?page=qr-login&qrHash=' . $qrHash, false, 'h', 3, 5, false);
                 exit();
             } 
             
-            die("NoPasswords.website");
+            die("unlock.digital");
         }
     }
     
@@ -246,8 +255,9 @@ class NoPasswords {
      *
      */
     public function qrLogin_plugin_menu() {
-        add_options_page('No More Passwords Plugin Options', 'No More Passwords', 'manage_options', 'qr-login', array( $this, 'qrLogin_plugin_options'));
+        add_options_page('No More Passwords Plugin Options', 'No More Passwords', 'read', 'qr-login', array( $this, 'qrLogin_plugin_options'));
     }
+    
     public function qrLogin_plugin_options() { ?>
         <style>
             @media only screen and (max-width: 550px), (max-device-width: 550px) {
@@ -263,7 +273,7 @@ class NoPasswords {
         if (isset($_GET['QRnonceAdmin']) && isset($_GET['qrHash'])){ // user logs in via standard qr code reader and web browser
             // verify nonce
             if ( ! wp_verify_nonce( preg_replace("/[^0-9a-zA-Z ]/", "", $_GET['QRnonceAdmin']), 'QRnonceAdmin' ) ) { 
-                die ( 'Busted!'); 
+                die ( '[QRnonceAdmin] Busted!'); 
             }
             
             $hash = preg_replace("/[^0-9a-zA-Z ]/", "", $_GET['qrHash']); ?>
@@ -272,16 +282,17 @@ class NoPasswords {
     <?php		
             // update table so browser knows user has logged in
             global $wpdb;
-            $table_name = $wpdb->prefix . $this->tbl_name;
+            $table_name = $wpdb->base_prefix . $this->tbl_name;
             $rows_affected = $wpdb->update( $table_name, array('uname' => $current_user->user_login), array('hash' => $hash) );	
 
-        } elseif (isset($_GET['qrHash']) && isset($_GET['uuid'])){ // set up new user with app   
+        } elseif (isset($_GET['qrHash']) && isset($_GET['uuid'])) { // set up new user with app   
             // app sends new uuid along with hash, user can only get here if authenticates
             $qrHash = preg_replace("/[^0-9a-zA-Z ]/", "", $_GET['qrHash']);
-            if ( $this->get_user_by_qrHash( $qrHash ) != 'guest' ) {
-                die ( 'Busted!');
+            if ( $this->get_user_by_qrHash( $qrHash ) != 'unused row' ) {
+                die ( "( qrHash ) != 'unused row' Busted!");
             }
             $uuid = preg_replace("/[^0-9a-zA-Z ]/", "", $_GET['uuid']);
+            $uuid_existing = get_user_meta($current_user->ID, 'uuid', true);
 
             $userOfPK = get_users( array(
                 'meta_key' => "uuid",
@@ -290,60 +301,64 @@ class NoPasswords {
                 'count_total' => false
             ));
             if ( count( $userOfPK ) > 0 ) {
-                // error_log("Dupicate users: ".json_encode($userOfPK));
+                // duplicate uuid
             } else {
                 // generate secret and set alt password + confirm with users
-                $secret = TimeOTP::generateSecret(64);
-                if ( $secret ) {
-                    $mfth = wp_generate_password(64, false, false); ?>
+            ?>
+                <h2 style="padding:1em;line-height:1.3em;text-align:center;">Howdy, <?php echo $current_user->display_name; ?>.<br>
+                    Please confirm that you'd like to connect to:<br><br>
+                    <?php bloginfo('url'); ?>
+                </h2>
 
-                    <h2>Howdy, <?php echo $current_user->display_name; ?>.<br>
-                        Please confirm that you'd like to connect to:<br>
-                        <?php bloginfo('url'); ?>
-                    </h2>
-
-                    <form action="/wp-admin/options-general.php?page=qr-login" method="post" name="nmpsec" accept-charset="utf-8" >
-                        <input type="hidden" value="<?php echo $uuid; ?>" name="uuid">
-                        <input type="hidden" value="<?php echo $secret; ?>" name="secret">
-                        <input type="hidden" value="<?php echo $mfth; ?>" name="mfth">
-                        <input type="hidden" name="nmpSecnonceAdmin" value="<?php echo wp_create_nonce('nmpSecnonceAdmin'); ?>">
-                        <button class="button button-primary button-hero" type="submit">Confirm connection</button>
-                    </form>
+                <form action="<?php echo admin_url('/options-general.php?page=qr-login'); ?>" method="post" name="nmpsec" accept-charset="utf-8" >
+                    <input type="hidden" value="" name="mfth" id="NMPmfth">
+                    <input type="hidden" value="<?php echo ( "" != $uuid_existing ) ? $uuid_existing: $uuid; ?>" name="uuid" id="NMPuuid">
+                    <input type="hidden" value="<?php echo $current_user->user_login ; ?>" name="un" id="NMPun">
+                    <input type="hidden" name="nmpSecnonceAdmin" value="<?php echo wp_create_nonce('nmpSecnonceAdmin'); ?>">
+                    <button style="display:block;margin:1em auto;" class="button button-primary button-hero" type="submit">Confirm connection</button>                     
+                    <p style="text-align:center;"><br>Not <?php echo $current_user->display_name; ?>? <a href="<?php echo wp_logout_url($_SERVER[REQUEST_URI]); ?>">Logout</a></p>
+                </form>
             <?php
-                }
             }
 
-        } elseif ( isset($_POST['nmpSecnonceAdmin']) && isset($_POST['secret']) && isset($_POST['mfth'])) { 
+        } elseif ( isset($_POST['nmpSecnonceAdmin']) && isset($_POST['uuid']) && isset($_POST['un'])) { 
             // user confirmed, send secret and alt password to app
             $nonce = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['nmpSecnonceAdmin']);
-            $secret = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['secret']);
-            $mfth = urldecode($_POST['mfth']);
-            $uuid = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['uuid']);            
-
             if ( ! wp_verify_nonce( $nonce, 'nmpSecnonceAdmin' ) ) { 
-                die ( 'Busted!'); 
-            } ?>
-
+                die ( 'nmpSecnonceAdmin Busted!'); 
+            }
+            
+            $secret = TimeOTP::generateSecret(64);
+            $mfth = wp_generate_password(64, false, false); ?>
             <input type="hidden" value="<?php echo $secret; ?>" id="NMPsec">
             <input type="hidden" value="<?php echo $mfth; ?>" id="NMPmfth">
+            <?php 
+            $uuid = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['uuid']);            
+            $un = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['un']); ?>
             <input type="hidden" value="<?php echo $uuid; ?>" id="NMPuuid">
-
+            <input type="hidden" value="<?php echo $un; ?>" id="NMPun">
+            <input type="hidden" blogname="<?php echo get_bloginfo( 'blogname' ); ?>"  siteurl="<?php echo get_bloginfo('url'); ?>" id="NMPsite">
             <?php
-            delete_user_meta($current_user->ID, "mfth");
-            delete_user_meta($current_user->ID, "uuid");
-            delete_user_meta($current_user->ID, "secret");
-            
-            // save hashed password
+
+            if ( isset($_POST['mfth']) && "reset" == $_POST['mfth'] ) {
+                delete_user_meta($current_user->ID, "mfth");
+                delete_user_meta($current_user->ID, "uuid");
+                delete_user_meta($current_user->ID, "secret");
+            }
+            // hash password
             $hashed = wp_hash_password($mfth);
-            
+            // http://stackoverflow.com/questions/9262109/php-simplest-two-way-encryption
+            $encrypted = base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, md5($mfth), $secret, MCRYPT_MODE_CBC, md5(md5($mfth))));
+
             // true to prevent multiple devices
             if ( add_user_meta($current_user->ID, "mfth", $hashed, true)
                 && add_user_meta($current_user->ID, "uuid", $uuid, true) 
-                && add_user_meta($current_user->ID, "secret", $secret, true) ) {
+                && add_user_meta($current_user->ID, "secret", $encrypted, true) ) {
                 die("New user successfully added!");
             } else {
                 die("No success.");
             }
+            
         } elseif (isset($_GET['qrHash'])){ 
             // user logs in via standard qr code reader and web browser
             if (isset($_GET['reject'])) { ?>
@@ -352,7 +367,8 @@ class NoPasswords {
             } else { 
                 $qrHash = preg_replace("/[^0-9a-zA-Z ]/", "", $_GET['qrHash']);
                 global $wpdb;
-                $qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = %s", $qrHash)); ?>
+                $table_name = $wpdb->base_prefix.$this->tbl_name;
+                $qrUserLogin = $wpdb->get_results($wpdb->prepare("SELECT uIP FROM $table_name WHERE hash = %s", $qrHash)); ?>
                 <h1>A login request for<br> 
                 <?php bloginfo('url'); ?><br> 
                 has been made from<br>
@@ -379,21 +395,23 @@ class NoPasswords {
                 <h2>Logs</h2>
             <?php	
                 global $wpdb;
-                $logs = $wpdb->get_results("SELECT * FROM ".$wpdb->prefix."qrLogin WHERE hash = 'used'");
+                $table_name = $wpdb->base_prefix.$this->tbl_name;
+                $logs = $wpdb->get_results("SELECT uname, timestamp FROM $table_name WHERE hash = 'used'");
                 foreach($logs as $log){
                     echo $log->uname.' logged in on '.$log->timestamp.'<br>';
                 }
             }
         }
     }
-
+    
     /**
      * Every three minutes deletes all rows that haven't been used yet
      * 
      */
     public function qr_housecleaning(){
         global $wpdb;
-        $mylink = $wpdb->get_results("DELETE FROM ".$wpdb->prefix."qrLogin WHERE hash NOT IN ('used') AND TIMESTAMPDIFF(MINUTE, timestamp, UTC_TIMESTAMP()) > 5");
+        $table_name = $wpdb->base_prefix.$this->tbl_name;
+        $mylink = $wpdb->get_results("DELETE FROM $table_name WHERE hash NOT IN ('used') AND TIMESTAMPDIFF(MINUTE, timestamp, UTC_TIMESTAMP()) > 5");
     }
     
     /**
@@ -410,14 +428,14 @@ class NoPasswords {
      *
      */
     private function qrLoginDB_install() {
-        $qrLogin_db_version = "0.2";
+        $qrLogin_db_version = "1.3.2";
         global $wpdb;
-        $table_name = $wpdb->prefix . $this->tbl_name;      
-        $sql = "CREATE TABLE " . $table_name . " (
+        $table_name = $wpdb->base_prefix . $this->tbl_name;      
+        $sql = "CREATE TABLE $table_name (
           id mediumint(9) NOT NULL AUTO_INCREMENT,
           timestamp datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
           hash text NOT NULL,
-          uname tinytext NOT NULL,
+          uname varchar(60) NOT NULL,
           challenge text DEFAULT '' NOT NULL,
           uIP VARCHAR(55) DEFAULT '' NOT NULL,
           UNIQUE KEY id (id)
@@ -445,7 +463,8 @@ class NoPasswords {
     public function qr_cron_deactivate() {
         wp_clear_scheduled_hook('qr_three_clean');
         global $wpdb;
-        $mylink = $wpdb->get_results("DELETE FROM ".$wpdb->prefix."qrLogin WHERE hash NOT IN ('used')");
+        $table_name = $wpdb->base_prefix.$this->tbl_name;
+        $mylink = $wpdb->get_results("DELETE FROM $table_name WHERE hash NOT IN ('used')");
     }
  
     /**

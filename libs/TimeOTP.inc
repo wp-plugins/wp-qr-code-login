@@ -26,7 +26,7 @@ class TimeOTP {
         if( strlen($secret) < 16 || strlen($secret) % 8 != 0 // Length of secret must be at least 16 characters and a multiple of 8.
            || preg_match('/[^a-z2-7]/i', strtolower($secret) ) === 1 // Secret contains non-base32 characters.
            || $length < 6 || $length > 8 ) { // $length length must be 6, 7 or, 8.
-            error_log('TimeOTP::getOTP -> Looks like someone is fucking with your system...');
+            error_log('TimeOTP::getOTP -> OTP out of sync');
             return false;
         } else {
             // Magic!!

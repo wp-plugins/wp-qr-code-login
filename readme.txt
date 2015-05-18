@@ -1,8 +1,8 @@
 === No Passwords ===
 Contributors: jackreichert
 Tags: Login, QR Code, Password, security, no more passwords
-Requires at least: 3.3
-Tested up to: 4.1
+Requires at least: 4
+Tested up to: 4.2.2
 Stable tag: trunk
 
 Log into your WordPress site using a smartphone... No typing and no passwords! (almost)
@@ -48,6 +48,9 @@ I have no answer to foo bar dilemma.
 1. This is how your login page will look all pimped out with it's QR code.
 
 == Changelog ==
+= 1.3.2 =
+* Mcrypt implemented in encrypting the TOTP hash.
+
 = 1.3.1 =
 * TOTP lengthened to 8 length and 60 seconds.
 
