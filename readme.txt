@@ -1,4 +1,4 @@
-=== No Passwords ===
+=== Unlock Digital (No Passwords) ===
 Contributors: jackreichert
 Tags: Login, QR Code, Password, security, no more passwords
 Requires at least: 4
