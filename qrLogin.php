@@ -3,7 +3,7 @@
 Plugin Name: Unlock Digital (No Passwords)
 Plugin URI: http://unlock.digital/
 Description: Formally, No More Passwords, this plugin with companion app lets WordPress users login to their site using a QR code
-Version: 1.3.2
+Version: 1.3.3
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2

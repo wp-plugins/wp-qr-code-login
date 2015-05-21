@@ -7,7 +7,9 @@
             // set width for qrcode
             var qrWidth = 201;
             // generate the qr code
-            var hashUrl = '/unlock.digital/?qrHash=' + qrLoginAjaxRequest.qrHash
+            var wpInstallUrl = qrLoginAjaxRequest.ajaxurl.replace("wp-admin/admin-ajax.php", "");
+            var hashUrl = wpInstallUrl + 'unlock.digital/?qrHash=' + qrLoginAjaxRequest.qrHash;
+            
             // append the qr code to the login form
 			$('#loginform').append('<div id="qrHash" style="display:block;width:' + qrWidth + 'px;height:auto;margin: 0 auto;"><img></div>').css({'padding-bottom':0});
 			$('#qrHash img').attr('src', hashUrl);
@@ -23,7 +25,8 @@
 			    	if (response === qrLoginAjaxRequest.qrHash){
                         var hasQuery = window.location.href.indexOf("?") > -1;
                         // reload the page so user can be logged in
-				        window.location = window.location.href+((hasQuery) ? "&" : "?"  )+"qrHash="+response+"&reloadNonce="+qrLoginAjaxRequest.reloadNonce;
+                        var redirectTo = window.location.href+((hasQuery) ? "&" : "?"  )+"qrHash="+response+"&reloadNonce="+qrLoginAjaxRequest.reloadNonce;
+				        window.location = redirectTo;
 				    } else if(response === 'hash gone') {
                         // too much time has passed reload and get a new qrcode
                         window.location.reload();
