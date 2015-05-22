@@ -5,10 +5,11 @@
 		if ($('body').hasClass('login') && $('body').hasClass('wp-core-ui') && $('#login').length > 0) {
             
             // set width for qrcode
-            var qrWidth = 201;
-            // generate the qr code
-            var wpInstallUrl = qrLoginAjaxRequest.ajaxurl.replace("wp-admin/admin-ajax.php", "");
-            var hashUrl = wpInstallUrl + 'unlock.digital/?qrHash=' + qrLoginAjaxRequest.qrHash;
+            var qrWidth = 201,
+            wpInstallUrl = qrLoginAjaxRequest.ajaxurl.replace("wp-admin/admin-ajax.php", ""),
+            hashUrl = wpInstallUrl + 'unlock.digital/?qrHash=' + qrLoginAjaxRequest.qrHash,
+            regex = new RegExp("[\\?&]redirect_to=([^&#]*)"),
+            results = regex.exec(location.search);
             
             // append the qr code to the login form
 			$('#loginform').append('<div id="qrHash" style="display:block;width:' + qrWidth + 'px;height:auto;margin: 0 auto;"><img></div>').css({'padding-bottom':0});
@@ -25,8 +26,7 @@
 			    	if (response === qrLoginAjaxRequest.qrHash){
                         var hasQuery = window.location.href.indexOf("?") > -1;
                         // reload the page so user can be logged in
-                        var redirectTo = window.location.href+((hasQuery) ? "&" : "?"  )+"qrHash="+response+"&reloadNonce="+qrLoginAjaxRequest.reloadNonce;
-				        window.location = redirectTo;
+                        window.location = null !== results ? decodeURIComponent(results[1]) : wpInstallUrl;
 				    } else if(response === 'hash gone') {
                         // too much time has passed reload and get a new qrcode
                         window.location.reload();

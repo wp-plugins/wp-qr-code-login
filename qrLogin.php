@@ -3,7 +3,7 @@
 Plugin Name: Unlock Digital (No Passwords)
 Plugin URI: http://unlock.digital/
 Description: Formally, No More Passwords, this plugin with companion app lets WordPress users login to their site using a QR code
-Version: 1.3.3
+Version: 1.3.4
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2
@@ -46,7 +46,6 @@ class NoPasswords {
      */
     public function load_actions() {
         add_action('login_enqueue_scripts', array( $this,'wp_qr_code_login_head'));
-        add_action('login_head', array( $this,'wp_qr_code_login_check_user'));
         add_action( 'wp_ajax_nopriv_ajax-qrLogin', array( $this,'ajax_check_logs_in') );
         add_action('parse_request', array( $this, 'qrLoginOTP'));
         add_action('admin_menu', array( $this, 'qrLogin_plugin_menu'));
@@ -87,36 +86,6 @@ class NoPasswords {
         $rows_affected = $wpdb->insert( $table_name, array( 'timestamp' => current_time('mysql',1), 'uname' => 'unused row', 'hash' => $hash, 'uip' => $_SERVER['REMOTE_ADDR']) );
 
         return $hash;
-    }
-
-    /**
-     * checks to see if hash has been received. Logs in if all checks out.
-     *
-     */
-    public function wp_qr_code_login_check_user(){
-        if ( isset( $_GET['reloadNonce'] ) ) {
-            $reloadNonce = preg_replace("/[^0-9a-zA-Z ]/", "",  $_GET['reloadNonce']);
-            if (isset($_GET['qrHash']) && $_GET['qrHash'] != 'used' && wp_verify_nonce( $reloadNonce, 'reload-nonce' )) {
-
-                $hash = preg_replace("/[^0-9a-zA-Z ]/", "",  $_GET['qrHash']);
-                $user_login = $this->get_user_by_qrHash( $hash );
-
-                if ($user_login != NULL && $user_login != 'unused row' && $user_login != ''){
-                    $this->log_user_in_with_login( $user_login );
-
-                    global $wpdb;
-                    $table_name = $wpdb->base_prefix . $this->tbl_name;
-                    $rows_affected = $wpdb->update( $table_name, array('hash' => 'used'), array('uname' => $user_login, 'hash' => $hash) );
-
-                    $redirect_to = get_bloginfo("url").'/wp-admin/';
-                    if ( isset( $_GET['redirect_to'] ) ) {
-                        $redirect_to = $_GET['redirect_to'];
-                    }
-                    echo '<script type="text/javascript">window.location = "'.$redirect_to.'";</script>'; 
-
-                } 
-            }
-        }
     }
     
     /**
@@ -169,7 +138,8 @@ class NoPasswords {
             // get the submitted qrHash
             $qrHash = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['qrHash']);
             $qrUserLogin = $this->get_user_by_qrHash( $qrHash );
-
+            $this->log_user_in_with_login( $qrUserLogin );
+            
             if( $qrUserLogin && $qrUserLogin != 'unused row') {
                 header('Access-Control-Allow-Origin: *'); 
                 header( "Content-Type: application/json" );
