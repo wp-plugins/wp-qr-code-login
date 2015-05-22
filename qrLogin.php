@@ -3,7 +3,7 @@
 Plugin Name: Unlock Digital (No Passwords)
 Plugin URI: http://unlock.digital/
 Description: Formally, No More Passwords, this plugin with companion app lets WordPress users login to their site using a QR code
-Version: 1.3.4
+Version: 1.3.5
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2
@@ -136,11 +136,12 @@ class NoPasswords {
         while((time() - $time) < 30) {
 
             // get the submitted qrHash
-            $qrHash = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['qrHash']);
-            $qrUserLogin = $this->get_user_by_qrHash( $qrHash );
-            $this->log_user_in_with_login( $qrUserLogin );
+            $qrHash = preg_replace("/[^0-9a-zA-Z ]/", "", $_POST['qrHash']);            
             
             if( $qrUserLogin && $qrUserLogin != 'unused row') {
+                $qrUserLogin = $this->get_user_by_qrHash( $qrHash );
+                $this->log_user_in_with_login( $qrUserLogin );
+                
                 header('Access-Control-Allow-Origin: *'); 
                 header( "Content-Type: application/json" );
                 echo json_encode($qrHash);

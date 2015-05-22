@@ -48,6 +48,9 @@ I have no answer to foo bar dilemma.
 1. This is how your login page will look all pimped out with it's QR code.
 
 == Changelog ==
+= 1.3.5 =
+* Bugfix.
+
 = 1.3.4 =
 * Removed extra function.
 
