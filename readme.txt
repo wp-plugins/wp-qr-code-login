@@ -48,7 +48,7 @@ I have no answer to foo bar dilemma.
 1. This is how your login page will look all pimped out with it's QR code.
 
 == Changelog ==
-= 1.3.6 =
+= 1.4 =
 * Enabled ability for administrator to disconnect app via site dashboard.
 * Added better logs.
 * When hash expires login page no longer reloads.
