@@ -6,8 +6,7 @@
 
             // set width for qrcode
             var qrWidth = 201,
-                wpInstallUrl = qrLoginAjaxRequest.ajaxurl.replace("wp-admin/admin-ajax.php", ""),
-                hashUrl = wpInstallUrl + 'unlock.digital/?qrHash=' + qrLoginAjaxRequest.qrHash,
+                hashUrl = qrLoginAjaxRequest.homeurl + '/unlock.digital/?qrHash=' + qrLoginAjaxRequest.qrHash,
                 regex = new RegExp("[\\?&]redirect_to=([^&#]*)"),
                 results = regex.exec(location.search),
                 qrHash = qrLoginAjaxRequest.qrHash;
@@ -27,12 +26,12 @@
                     if (response === qrHash) {
                         var hasQuery = window.location.href.indexOf("?") > -1;
                         // reload the page so user can be logged in
-                        var reload = ( null !== results ) ? decodeURIComponent(results[1]) : wpInstallUrl;
+                        var reload = ( null !== results ) ? decodeURIComponent(results[1]) : qrLoginAjaxRequest.homeurl;
                         window.location = reload;
                     } else if (response.length == 32) {
                         qrHash = response;
                         // too much time has passed reload and get a new qrcode
-                        hashUrl = wpInstallUrl + 'unlock.digital/?qrHash=' + response;
+                        hashUrl = qrLoginAjaxRequest.homeurl + '/unlock.digital/?qrHash=' + response;
                         $('#qrHash img').attr('src', hashUrl);
                     }
 
