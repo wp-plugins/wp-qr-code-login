@@ -70,7 +70,7 @@ class NoPasswords {
 			wp_enqueue_script( 'qrLogin_js', plugins_url( '/js/qrLogin.js', __FILE__ ), array( 'jquery' ) );
 			wp_localize_script( 'qrLogin_js', 'qrLoginAjaxRequest', array(
 					'ajaxurl'      => admin_url( 'admin-ajax.php' ),
-					'homeurl'      => get_home_url( null, "", "relative" ),
+					'homeurl'      => get_home_url( null, "", "https" ),
 					'qrLoginNonce' => wp_create_nonce( 'qrLogin-nonce' ),
 					'qrHash'       => $this->generateHash(),
 					'reloadNonce'  => wp_create_nonce( 'reload-nonce' )
