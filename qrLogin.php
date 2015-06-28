@@ -3,7 +3,7 @@
 Plugin Name: Unlock Digital (No Passwords)
 Plugin URI: http://unlock.digital/
 Description: Formally, No More Passwords, this plugin with companion app lets WordPress users login to their site using a QR code
-Version: 1.4.2
+Version: 1.4.3
 Author: Jack Reichert
 Author URI: http://www.jackreichert.com
 License: GPL2
@@ -70,7 +70,7 @@ class NoPasswords {
 			wp_enqueue_script( 'qrLogin_js', plugins_url( '/js/qrLogin.js', __FILE__ ), array( 'jquery' ) );
 			wp_localize_script( 'qrLogin_js', 'qrLoginAjaxRequest', array(
 					'ajaxurl'      => admin_url( 'admin-ajax.php' ),
-					'homeurl'      => get_home_url( null, "", "https" ),
+					'homeurl'      => preg_replace("(^https?://)", "//", get_home_url( null, "", "https" )),
 					'qrLoginNonce' => wp_create_nonce( 'qrLogin-nonce' ),
 					'qrHash'       => $this->generateHash(),
 					'reloadNonce'  => wp_create_nonce( 'reload-nonce' )
@@ -421,7 +421,7 @@ class NoPasswords {
                     $site_url = preg_replace('#^(http|https)://#', '', get_bloginfo('url'));
                     $query = $wpdb->prepare("SELECT uname, uIP, timestamp FROM $table_name WHERE hash = 'used' AND site = '%s' ORDER BY uname,timestamp DESC", $site_url );
 					$logResults = $wpdb->get_results( $query );
-					$logs       = [ ];
+					$logs       = array();
 					foreach ( $logResults as $i => $log ) {
 						$logs[ $log->uname ][] = array( "timestamp" => $log->timestamp, "uIP" => $log->uIP );
 					}

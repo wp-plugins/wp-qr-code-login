@@ -48,6 +48,9 @@ I have no answer to foo bar dilemma.
 1. This is how your login page will look all pimped out with it's QR code.
 
 == Changelog ==
+= 1.4.3 =
+* removed [] array for better compatibility. Some QR codes weren’t loading due to forced SSL.
+
 = 1.4.2 =
 * Made homeurl variable scheme relative
 
